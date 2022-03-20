@@ -1,4 +1,4 @@
-# Satis - composer repository
+# Private Composer Registry Action
 Used for building your own composer repository using [composer/satis](https://github.com/composer/satis).
 
 ## Inputs
@@ -7,6 +7,7 @@ Used for building your own composer repository using [composer/satis](https://gi
 |--------------|---------------------------------------------------------------------------------------------------------|------------------------------|
 | token        | GitHub token that will be used for composer when invoked by satis.<br/>Currently auth is static for "github-oauth" | Yes                          |
 | satis_config | Path to your satis configuration file                                                                   | No.<br/>Default = `./satis.json` |
+| package_name | The name of the package to add and/or update.                                                           | No.                           |
 
 ## Outputs
 None
@@ -27,7 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: dev-this/satis-build@v1
+      - name: Private Composer Registry
+        uses: and-that/private-composer-registry-action@v1.1
         with:
           token: ${{ GITHUB_TOKEN }} # App/OAuth token, PAT
       - env:
