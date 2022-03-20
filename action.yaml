@@ -1,5 +1,5 @@
 name: 'Private Composer Registry'
-description: 'Build a private composer registry using Satis'
+description: 'Build a private composer registry (packagist) using Satis'
 
 inputs:
   token:
@@ -34,10 +34,12 @@ runs:
         fi
 
         if [ -n "${{ inputs.package_name }}"]; then
-          php $COMPOSER_HOME/vendor/bin/satis add -n --name=${PACKAGE} "https://github.com/${PACKAGE}" ${SATIS_CONFIG} || true
-          php $COMPOSER_HOME/vendor/bin/satis build -n ${SATIS_CONFIG} . ${PACKAGE}
+          php $COMPOSER_HOME/vendor/bin/satis add -n --name=${{ inputs.package_name }} \
+            "https://github.com/${{ inputs.package_name }}" \
+            ${{ inputs.satis_config }} || true
+          php $COMPOSER_HOME/vendor/bin/satis build -n ${{ inputs.satis_config }} . ${{ inputs.package_name }}
         else
-          php $COMPOSER_HOME/vendor/bin/satis build -n ${SATIS_CONFIG}
+          php $COMPOSER_HOME/vendor/bin/satis build -n ${{ inputs.satis_config }}
         fi
 
         if cat ${{ inputs.satis_config }} | jq .archive -e; then
