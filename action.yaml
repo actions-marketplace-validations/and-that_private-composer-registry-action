@@ -9,6 +9,9 @@ inputs:
     description: 'Path to satis configuration file (default: ./satis.json)'
     required: false
     default: 'satis.json'
+  package_name:
+    description: 'The name of the package to add and/or update.'
+    required: false
 
 runs:
   using: "composite"
@@ -24,7 +27,18 @@ runs:
           --no-cache --no-progress --no-interaction -o \
           --ignore-platform-reqs
 
-        php $COMPOSER_HOME/vendor/bin/satis build ${{ inputs.satis_config }} -n
+        if ! [ -f "${{ inputs.satis_config }}" ]; then 
+          php $COMPOSER_HOME/vendor/bin/satis init ${{ inputs.satis_config }} -n \
+            --name="${{ github.repository }}" \
+            --homepage="https://github.com/${{ github.repository_owner }}"
+        fi
+
+        if [ -n "${{ inputs.package_name }}"]; then
+          php $COMPOSER_HOME/vendor/bin/satis add -n --name=${PACKAGE} "https://github.com/${PACKAGE}" ${SATIS_CONFIG} || true
+          php $COMPOSER_HOME/vendor/bin/satis build -n ${SATIS_CONFIG} . ${PACKAGE}
+        else
+          php $COMPOSER_HOME/vendor/bin/satis build -n ${SATIS_CONFIG}
+        fi
 
         if cat ${{ inputs.satis_config }} | jq .archive -e; then
           php $COMPOSER_HOME/vendor/bin/satis purge ${{ inputs.satis_config }} -n
