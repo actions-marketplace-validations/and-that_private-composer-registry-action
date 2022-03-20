@@ -12,7 +12,7 @@ inputs:
   package_name:
     description: 'The name of the package to add and/or update.'
     required: false
-
+    
 runs:
   using: "composite"
   steps:
@@ -22,35 +22,47 @@ runs:
       run: |
         mkdir /tmp/.satis-build
         echo "{}" > /tmp/.satis-build/composer.json
-
+        # Install Satis
+        echo "Installing Satis with Composer"
         composer g require composer/satis:dev-main --prefer-dist \
           --no-cache --no-progress --no-interaction -o \
-          --ignore-platform-reqs
-
-        if ! [ -f "${{ inputs.satis_config }}" ]; then 
-          php $COMPOSER_HOME/vendor/bin/satis init ${{ inputs.satis_config }} -n \
+          --ignore-platform-reqs -q
+        echo "Satis installed."
+        # Initialse Satis if required
+        if  [ ! -f "${{ inputs.satis_config }}" ]; then
+          echo "No existing Satis configuration found. Initializing..."
+          php $COMPOSER_HOME/vendor/bin/satis init ${{ inputs.satis_config }} -n -v \
             --name="${{ github.repository }}" \
             --homepage="https://github.com/${{ github.repository_owner }}"
         fi
-
-        if [ -n "${{ inputs.package_name }}"]; then
+        # Determine output directory
+        echo "Getting output directory"
+        OUTPUT_DIR=$(cat "${{ inputs.satis_config }}" | jq -rc '."output-dir"')
+        if [[ $OUTPUT_DIR == "null" ]]; then
+          echo "Output directory not set, using current directory."
+          OUTPUT_DIR="."
+        fi
+        
+        # Determine build strategy
+        if [ ! -z "${{ inputs.package_name }}" ]; then
+          echo "Package provided... running partial build"
           php $COMPOSER_HOME/vendor/bin/satis add -n --name=${{ inputs.package_name }} \
             "https://github.com/${{ inputs.package_name }}" \
             ${{ inputs.satis_config }} || true
-          php $COMPOSER_HOME/vendor/bin/satis build -n ${{ inputs.satis_config }} . ${{ inputs.package_name }}
+          php $COMPOSER_HOME/vendor/bin/satis build -n ${{ inputs.satis_config }} $OUTPUT_DIR ${{ inputs.package_name }}
         else
-          php $COMPOSER_HOME/vendor/bin/satis build -n ${{ inputs.satis_config }}
+          echo "Running full build"
+          php $COMPOSER_HOME/vendor/bin/satis build -n ${{ inputs.satis_config }} $OUTPUT_DIR
         fi
-
+        # Archive packages if configured to do so
         if cat ${{ inputs.satis_config }} | jq .archive -e; then
+          echo "Purging archived packages"
           php $COMPOSER_HOME/vendor/bin/satis purge ${{ inputs.satis_config }} -n
         fi
-
       shell: bash
     - run: |
         rm -rf $COMPOSER_HOME
       shell: bash
-
 branding:
   icon: 'download-cloud'
   color: 'gray-dark'
