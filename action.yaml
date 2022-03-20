@@ -1,5 +1,5 @@
-name: 'Satis build - composer repository'
-description: 'Build a static composer repository using satis'
+name: 'Private Composer Registry'
+description: 'Build a private composer registry using Satis'
 
 inputs:
   token:
