@@ -22,12 +22,14 @@ runs:
       run: |
         mkdir /tmp/.satis-build
         echo "{}" > /tmp/.satis-build/composer.json
+
         # Install Satis
         echo "Installing Satis with Composer"
         composer g require composer/satis:dev-main --prefer-dist \
           --no-cache --no-progress --no-interaction -o \
           --ignore-platform-reqs -q
         echo "Satis installed."
+
         # Initialse Satis if required
         if  [ ! -f "${{ inputs.satis_config }}" ]; then
           echo "No existing Satis configuration found. Initializing..."
@@ -35,6 +37,7 @@ runs:
             --name="${{ github.repository }}" \
             --homepage="https://github.com/${{ github.repository_owner }}"
         fi
+
         # Determine output directory
         echo "Getting output directory"
         OUTPUT_DIR=$(cat "${{ inputs.satis_config }}" | jq -rc '."output-dir"')
@@ -42,7 +45,7 @@ runs:
           echo "Output directory not set, using current directory."
           OUTPUT_DIR="."
         fi
-        
+
         # Determine build strategy
         if [ ! -z "${{ inputs.package_name }}" ]; then
           echo "Package provided... running partial build"
@@ -54,6 +57,7 @@ runs:
           echo "Running full build"
           php $COMPOSER_HOME/vendor/bin/satis build -n ${{ inputs.satis_config }} $OUTPUT_DIR
         fi
+
         # Archive packages if configured to do so
         if cat ${{ inputs.satis_config }} | jq .archive -e; then
           echo "Purging archived packages"

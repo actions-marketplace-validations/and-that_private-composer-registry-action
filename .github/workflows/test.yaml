@@ -18,3 +18,12 @@ jobs:
       - run: |
           ls -lha public/
         name: Check satis build dir
+  partial-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run action
+        uses: ./
+        with:
+          token: ${{ github.token }}
+          package_name: "symfony/messenger"
